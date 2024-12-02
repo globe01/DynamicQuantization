@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+from scipy.stats import gaussian_kde
 
 
 
@@ -166,10 +167,46 @@ def interval_based_quantize_dequantize(data, num_levels, dequantize=True):
     quantized_data = torch.clamp(quantized_data, 0, num_levels - 1)
 
     # 反量化：将量化值映射回原始范围，再乘回去，加回去
-    dequantized_data = quantized_data * interval_size + min_val + interval_size / 2
+    # 计算反量化的 scale 和 bias
+    scale = interval_size
+    bias = min_val + interval_size / 2
+    dequantized_data = quantized_data * scale + bias
 
     return quantized_data, dequantized_data
 
+
+def interval_based_quantize_dequantize_2(data, num_levels, dequantize=True):
+    """
+    基于均匀区间的量化函数，支持反量化。
+
+    参数:
+        data: torch.Tensor，输入的浮点数据。
+        num_levels: int，量化级别数量。
+        dequantize: bool，是否进行反量化，默认为 False。
+
+    返回:
+        quantized_data: torch.Tensor，量化后的数据。
+        dequantized_data: torch.Tensor，反量化后的数据（如果 dequantize=True）。
+    """
+    min_val = torch.min(data)
+    max_val = torch.max(data)
+
+    # 计算区间的步长（范围分成 num_levels 块）
+    interval_size = (max_val - min_val) / num_levels  # 例如 14 / 16 = 0.875
+
+    # 将数据按照每个区间大小来进行量化，并使用四舍五入
+    quantized_data = torch.round((data - min_val - interval_size / 2) / interval_size)
+
+    # 限制量化范围为 [0, num_levels - 1]
+    quantized_data = torch.clamp(quantized_data, 0, num_levels - 1)
+
+    # 反量化：将量化值映射回原始范围，再乘回去，加回去
+    # 计算反量化的 scale 和 bias
+    scale = interval_size
+    bias = min_val + interval_size / 2
+    dequantized_data = quantized_data * scale + bias
+
+    return quantized_data, dequantized_data, scale, bias
 #-----------------------------------------------------------------#
 
 
@@ -241,6 +278,73 @@ def interval_based_quantize_eachprint(data, num_levels):
 
 #————————————————————————————关键量化函数————————————————————————————
 # 动态量化级别缩减函数
+# def dynamic_quantize_level_reduce(Q, D, num_levels):
+#     unique_levels = torch.unique(Q)  # 提取 Q 中的唯一值
+#     unique_levels.sort()  # 排序
+#     iteration = 0  # 初始化循环计数器
+#     hist_data = []  # 用于保存每一步的直方图数据
+#
+#     while len(unique_levels) > num_levels:
+#         iteration += 1  # 循环次数加一
+#         # 计算每一个level对应的误差
+#         E = (Q - D) ** 2
+#         # 计算每一个level对应的误差和
+#         E_sum = {level.item(): sum(E[Q == level]).item() for level in unique_levels}
+#         # 获得误差最小对应的level
+#         min_level = min(E_sum, key=E_sum.get)
+#         # 找到 min_level 在 unique_levels 中的索引位置
+#         min_level_idx = torch.where(unique_levels == min_level)[0].item()
+#
+#         # 打印信息
+#         print(f"Iteration {iteration}:")
+#         print(f"unique_levels: {unique_levels}")
+#         print(f"min_level_idx: {min_level_idx}")
+#
+#         # 设置默认值
+#         less_level = None
+#         more_level = None
+#
+#         if min_level_idx == 0:  # 如果最小误差对应的level是第一个
+#             Q[Q == min_level] = unique_levels[1]
+#         elif min_level_idx == len(unique_levels) - 1:# 如果最小误差对应的level是最后一个
+#             Q[Q == min_level] = unique_levels[-2]
+#         else:
+#             less_level = unique_levels[min_level_idx - 1].item()
+#             more_level = unique_levels[min_level_idx + 1].item()
+#             Q[(Q == min_level) & (D <= min_level)] = less_level
+#             Q[(Q == min_level) & (D > min_level)] = more_level
+#
+#         # 打印出被替换的level的值
+#         print(f"less_level: {less_level}, more_level: {more_level}")
+#
+#         # 更新唯一值
+#         unique_levels = torch.unique(Q)
+#         unique_levels.sort()  # 排序
+#
+#         # 将当前的量化数据 Q 从[0, b1-1]映射到 [-b2 / 2, b2 / 2 - 1] 区间
+#         Q_mapped = map_to_target_range(Q, 0, b1 - 1, -half_range(num_levels), half_range(num_levels) - 1)
+#
+#
+#
+#         # # 保存直方图数据
+#         # hist_data.append(Q.clone().numpy())
+#
+#         # 保存映射后的直方图数据
+#         hist_data.append(Q_mapped.clone().numpy())
+#
+#         # 打印出最小的误差，及其对应的level的值
+#         print(f"min_level: {min_level}, min_error: {E_sum[min_level]}\n")
+#
+#     # # 全弄完之后，最后一次映射，将当前的量化数据 Q 从[0, b1-1]映射到 [-b2 / 2, b2 / 2 - 1] 区间
+#     Q_mapped = map_to_target_range(Q, 0, b1 - 1, -half_range(num_levels), half_range(num_levels) - 1)
+#
+#
+#     return Q_mapped, hist_data
+
+
+
+
+# 按照学长建议修改，因为反量化以后的less_level和more_level与min_level的间隔应该不一样了
 def dynamic_quantize_level_reduce(Q, D, num_levels):
     unique_levels = torch.unique(Q)  # 提取 Q 中的唯一值
     unique_levels.sort()  # 排序
@@ -255,7 +359,7 @@ def dynamic_quantize_level_reduce(Q, D, num_levels):
         E_sum = {level.item(): sum(E[Q == level]).item() for level in unique_levels}
         # 获得误差最小对应的level
         min_level = min(E_sum, key=E_sum.get)
-        # 找到 min_level 在 unique_levels 中的索引位置
+        # 找到unique_levels离minlevel最近的两个值
         min_level_idx = torch.where(unique_levels == min_level)[0].item()
 
         # 打印信息
@@ -269,13 +373,15 @@ def dynamic_quantize_level_reduce(Q, D, num_levels):
 
         if min_level_idx == 0:  # 如果最小误差对应的level是第一个
             Q[Q == min_level] = unique_levels[1]
-        elif min_level_idx == len(unique_levels) - 1:# 如果最小误差对应的level是最后一个
+        elif min_level_idx == len(unique_levels) - 1:  # 如果最小误差对应的level是最后一个
             Q[Q == min_level] = unique_levels[-2]
         else:
             less_level = unique_levels[min_level_idx - 1].item()
             more_level = unique_levels[min_level_idx + 1].item()
-            Q[(Q == min_level) & (D <= min_level)] = less_level
-            Q[(Q == min_level) & (D > min_level)] = more_level
+
+            # 改进：按距离分配到 closer level
+            Q[(Q == min_level) & (abs(D - less_level) < abs(D - more_level))] = less_level
+            Q[(Q == min_level) & (abs(D - less_level) >= abs(D - more_level))] = more_level
 
         # 打印出被替换的level的值
         print(f"less_level: {less_level}, more_level: {more_level}")
@@ -284,25 +390,13 @@ def dynamic_quantize_level_reduce(Q, D, num_levels):
         unique_levels = torch.unique(Q)
         unique_levels.sort()  # 排序
 
-        # 将当前的量化数据 Q 从[0, b1-1]映射到 [-b2 / 2, b2 / 2 - 1] 区间
-        Q_mapped = map_to_target_range(Q, 0, b1 - 1, -half_range(num_levels), half_range(num_levels) - 1)
-
-
-
-        # # 保存直方图数据
-        # hist_data.append(Q.clone().numpy())
-
-        # 保存映射后的直方图数据
-        hist_data.append(Q_mapped.clone().numpy())
+        # 保存直方图数据
+        hist_data.append(Q.clone().numpy())
 
         # 打印出最小的误差，及其对应的level的值
         print(f"min_level: {min_level}, min_error: {E_sum[min_level]}\n")
 
-    # # 全弄完之后，最后一次映射，将当前的量化数据 Q 从[0, b1-1]映射到 [-b2 / 2, b2 / 2 - 1] 区间
-    Q_mapped = map_to_target_range(Q, 0, b1 - 1, -half_range(num_levels), half_range(num_levels) - 1)
-
-
-    return Q_mapped, hist_data
+    return Q, hist_data
 
 #————————————————————————————————————————————————————————————————
 
@@ -310,15 +404,17 @@ def dynamic_quantize_level_reduce(Q, D, num_levels):
 
 
 
+
+
 #—————————————————动态量化级别缩减函数（加入反量化）————————————————
-# 动态量化级别缩减函数
-# 动态量化级别缩减函数（支持动态反量化）
+# 动态量化级别缩减函数（支持动态反量化）————测试效果目前最好
+
 def dynamic_quantize_level_reduce_dequantize(Q, D, num_levels):
     unique_levels = torch.unique(Q)  # 提取 Q 中的唯一值
     unique_levels.sort()  # 排序
     iteration = 0  # 初始化循环计数器
     hist_data = []  # 用于保存每一步的直方图数据
-    level_mapping = {}  # 动态记录每个量化级别的原始值（用于反量化）
+    level_mapping = {}  # 动态映射字典，动态记录每个量化级别的原始值（用于反量化）
 
     # 初始化映射关系
     for level in unique_levels:
@@ -330,10 +426,19 @@ def dynamic_quantize_level_reduce_dequantize(Q, D, num_levels):
         E = (Q - D) ** 2
         # 计算每一个level对应的误差和
         E_sum = {level.item(): sum(E[Q == level]).item() for level in unique_levels}
+
+        # 打印每个 level 的误差
+        print(f"Iteration {iteration}:")
+        print("Loss for each level:")
+        for idx, (level, loss) in enumerate(E_sum.items()):
+            print(f"  [{idx}] Level {level}: {loss:.3f}")
+
+
         # 获得误差最小对应的level
         min_level = min(E_sum, key=E_sum.get)
         # 找到 min_level 在 unique_levels 中的索引位置
         min_level_idx = torch.where(unique_levels == min_level)[0].item()
+        print(f"  -> Min loss level: {min_level}, Min loss level Index: [{min_level_idx:d}]")
 
         # 设置默认值
         less_level = None
@@ -346,7 +451,19 @@ def dynamic_quantize_level_reduce_dequantize(Q, D, num_levels):
         else:
             less_level = unique_levels[min_level_idx - 1].item()
             more_level = unique_levels[min_level_idx + 1].item()
-            replacement_level = less_level if abs(min_level - less_level) < abs(min_level - more_level) else more_level
+
+            #replacement_level = less_level if abs(min_level - less_level) < abs(min_level - more_level) else more_level
+            # 基于反量化值的距离计算
+            less_level_value = level_mapping[less_level]
+            more_level_value = level_mapping[more_level]
+            min_level_value = level_mapping[min_level]
+
+            replacement_level = (
+                less_level
+                if abs(min_level_value - less_level_value) < abs(min_level_value - more_level_value)
+                else more_level
+            )
+
 
         # 更新 Q 中的值
         Q[Q == min_level] = replacement_level
@@ -367,6 +484,7 @@ def dynamic_quantize_level_reduce_dequantize(Q, D, num_levels):
         # 保存直方图数据
         hist_data.append(Q.clone().numpy())
 
+        # 打印当前迭代信息
         print(f"Iteration {iteration}:")
         print(f"Updated level_mapping: {level_mapping}")
 
@@ -377,159 +495,703 @@ def dynamic_quantize_level_reduce_dequantize(Q, D, num_levels):
 
     return dequantized_data, hist_data
 
-#————————————————————————————————————————————————————————————————
 
-
-
-
-
-
-
-
-
-
-# def dynamic_quantize_level_reduce(Q, D, num_levels):
+# def dynamic_quantize_level_reduce_dequantize(Q, D, num_levels):
 #     unique_levels = torch.unique(Q)  # 提取 Q 中的唯一值
 #     unique_levels.sort()  # 排序
 #     iteration = 0  # 初始化循环计数器
 #     hist_data = []  # 用于保存每一步的直方图数据
+#     level_mapping = {}  # 动态映射字典，动态记录每个量化级别的原始值（用于反量化）
+#
+#     # 初始化映射关系
+#     for level in unique_levels:
+#         level_mapping[level.item()] = level.item()
 #
 #     while len(unique_levels) > num_levels:
 #         iteration += 1  # 循环次数加一
-#         total_errors = {}  # 用于保存去除每个 level 后的误差总和
+#         # 计算每一个level对应的误差
+#         E = (Q - D) ** 2
+#         # 计算每一个level对应的误差和
+#         E_sum = {level.item(): sum(E[Q == level]).item() for level in unique_levels}
 #
-#         # 遍历每个 level，计算去掉该 level 后的误差总和
-#         for level in unique_levels:
-#             # 创建一个副本，在副本中移除当前级别的元素
-#             Q_copy = Q.clone()
+#         # 找到误差最小的级别集合
+#         min_error = min(E_sum.values())
+#         min_levels = [level for level, error in E_sum.items() if error == min_error]
 #
-#             # 获取当前级别在 unique_levels 中的索引位置
-#             level_idx = torch.where(unique_levels == level)[0].item()
-#
-#             # 根据索引位置将当前级别的值重新分配给相邻的级别
-#             if level_idx == 0:
-#                 # 如果是第一个量化级别，重新分配到下一个级别
-#                 Q_copy[Q == level] = unique_levels[1]
-#             elif level_idx == len(unique_levels) - 1:
-#                 # 如果是最后一个量化级别，重新分配到上一个级别
-#                 Q_copy[Q == level] = unique_levels[-2]
-#             else:
-#                 # 否则，分配到相邻的两个级别，根据原始数据 D 的距离进行分配
-#                 less_level = unique_levels[level_idx - 1].item()
-#                 more_level = unique_levels[level_idx + 1].item()
-#                 Q_copy[(Q == level) & (D <= level)] = less_level
-#                 Q_copy[(Q == level) & (D > level)] = more_level
-#
-#             # 计算去除当前级别后的误差总和
-#             E_copy = (Q_copy - D) ** 2
-#             total_errors[level.item()] = E_copy.sum().item()
-#
-#         # 找到移除后误差总和最小的量化级别
-#         level_to_remove = min(total_errors, key=total_errors.get)
-#         print(
-#             f"Iteration {iteration}: Removing level {level_to_remove} with total error {total_errors[level_to_remove]}")
-#
-#         # 在 Q 中移除误差最小的 level，并重新分配对应的元素
-#         level_idx_to_remove = torch.where(unique_levels == level_to_remove)[0].item()
-#
-#         # 更新 Q 中的移除逻辑
-#         if level_idx_to_remove == 0:
-#             Q[Q == level_to_remove] = unique_levels[1]
-#         elif level_idx_to_remove == len(unique_levels) - 1:
-#             Q[Q == level_to_remove] = unique_levels[-2]
+#         # 如果有多个候选的 min_level，选取离中心最远的
+#         if len(min_levels) > 1:
+#             center = (unique_levels.max() + unique_levels.min()) / 2  # 当前中心值
+#             min_level = max(min_levels, key=lambda x: abs(x - center))  # 选离中心最远的
 #         else:
-#             less_level = unique_levels[level_idx_to_remove - 1].item()
-#             more_level = unique_levels[level_idx_to_remove + 1].item()
-#             Q[(Q == level_to_remove) & (D <= level_to_remove)] = less_level
-#             Q[(Q == level_to_remove) & (D > level_to_remove)] = more_level
+#             min_level = min_levels[0]
 #
-#         # 更新 unique_levels
-#         unique_levels = torch.unique(Q)
-#         unique_levels.sort()  # 排序
+#         # 找到 min_level 在 unique_levels 中的索引位置
+#         min_level_idx = torch.where(unique_levels == min_level)[0].item()
 #
-#         # 调试打印以查看 unique_levels 更新情况
-#         print(f"Updated unique levels after removal: {unique_levels.tolist()}")
+#         # 设置默认值
+#         less_level = None
+#         more_level = None
 #
-#         # 将当前的量化数据 Q 从[0, b1-1]映射到 [-b2 / 2, b2 / 2 - 1] 区间
-#         Q_mapped = map_to_target_range(Q, 0, b1 - 1, -half_range(num_levels), half_range(num_levels) - 1)
-#
-#         # 保存映射后的直方图数据
-#         hist_data.append(Q_mapped.clone().numpy())
-#
-#         # 打印出最小的误差，及其对应的level的值
-#         print(f"min_level: {level_to_remove}, min_error: {total_errors[level_to_remove]}\n")
-#
-#     # 最后一次映射，将当前的量化数据 Q 从[0, b1-1]映射到 [-b2 / 2, b2 / 2 - 1] 区间
-#     Q_mapped = map_to_target_range(Q, 0, b1 - 1, -half_range(num_levels), half_range(num_levels) - 1)
-#
-#     return Q_mapped, hist_data
-
-# def dynamic_quantize_level_reduce(Q, D, num_levels):
-#     unique_levels = torch.unique(Q)  # 提取 Q 中的唯一值
-#     unique_levels.sort()  # 排序
-#     iteration = 0  # 初始化循环计数器
-#     hist_data = []  # 用于保存每一步的直方图数据
-#
-#     while len(unique_levels) > num_levels:
-#         iteration += 1  # 循环次数加一
-#
-#         # 初始化移除后的误差
-#         total_errors = {}
-#
-#         for level in unique_levels:
-#             # 暂时移除当前级别的数据
-#             Q_copy = Q.clone()
-#
-#             # 将被移除level的数据点分配给临近的level
-#             level_idx = (unique_levels == level).nonzero(as_tuple=True)[0].item()
-#
-#             if level_idx == 0:
-#                 # 如果是第一个量化级别，分配给下一个级别
-#                 Q_copy[Q == level] = unique_levels[1]
-#             elif level_idx == len(unique_levels) - 1:
-#                 # 如果是最后一个量化级别，分配给上一个级别
-#                 Q_copy[Q == level] = unique_levels[-2]
-#             else:
-#                 # 否则，分配到相邻的两个级别中，根据与数据的距离进行分配
-#                 less_level = unique_levels[level_idx - 1].item()
-#                 more_level = unique_levels[level_idx + 1].item()
-#                 Q_copy[(Q == level) & (D <= level)] = less_level
-#                 Q_copy[(Q == level) & (D > level)] = more_level
-#
-#             # 计算重新分配后的总误差
-#             E = (Q_copy - D) ** 2
-#             total_errors[level.item()] = E.sum().item()  # 将每个level移除后的总误差记录下来
-#
-#         # 找到移除后总误差最小的量化级别
-#         level_to_remove = min(total_errors, key=total_errors.get)
-#
-#         # 重新分配数据
-#         level_idx_to_remove = (unique_levels == level_to_remove).nonzero(as_tuple=True)[0].item()
-#         if level_idx_to_remove == 0:
-#             Q[Q == level_to_remove] = unique_levels[1]
-#         elif level_idx_to_remove == len(unique_levels) - 1:
-#             Q[Q == level_to_remove] = unique_levels[-2]
+#         if min_level_idx == 0:  # 如果最小误差对应的level是第一个
+#             replacement_level = unique_levels[1]
+#         elif min_level_idx == len(unique_levels) - 1:  # 如果最小误差对应的level是最后一个
+#             replacement_level = unique_levels[-2]
 #         else:
-#             less_level = unique_levels[level_idx_to_remove - 1].item()
-#             more_level = unique_levels[level_idx_to_remove + 1].item()
-#             Q[(Q == level_to_remove) & (D <= level_to_remove)] = less_level
-#             Q[(Q == level_to_remove) & (D > level_to_remove)] = more_level
+#             less_level = unique_levels[min_level_idx - 1].item()
+#             more_level = unique_levels[min_level_idx + 1].item()
 #
-#         # 打印信息
-#         print(f"Iteration {iteration}:")
-#         print(f"Removed level: {level_to_remove}, Total error: {total_errors[level_to_remove]}")
+#             # 基于反量化值的距离计算
+#             less_level_value = level_mapping[less_level]
+#             more_level_value = level_mapping[more_level]
+#             min_level_value = level_mapping[min_level]
+#
+#             replacement_level = (
+#                 less_level
+#                 if abs(min_level_value - less_level_value) < abs(min_level_value - more_level_value)
+#                 else more_level
+#             )
+#
+#         # 更新 Q 中的值
+#         Q[Q == min_level] = replacement_level
+#
+#         # 更新映射关系
+#         if isinstance(replacement_level, torch.Tensor):  # 检查类型
+#             replacement_level = replacement_level.item()  # 转换为 Python 数值
+#
+#         # 更新 level_mapping
+#         level_mapping[replacement_level] = (level_mapping[replacement_level] + level_mapping[min_level]) / 2
+#         del level_mapping[min_level]  # 删除已合并的级别
 #
 #         # 更新唯一值
 #         unique_levels = torch.unique(Q)
 #         unique_levels.sort()
 #
-#         # 将当前的量化数据 Q 从(0,b1-1)映射到 [-((b2 - 1) / 2), ((b2 - 1) / 2)] 区间
-#         Q_mapped = map_to_target_range(Q, 0, b1 - 1, -half_range_b2, half_range_b2)
-#         hist_data.append(Q_mapped.clone().numpy())
+#         # 保存直方图数据
+#         hist_data.append(Q.clone().numpy())
 #
-#     return Q_mapped, hist_data
+#         print(f"Iteration {iteration}:")
+#         print(f"Updated level_mapping: {level_mapping}")
+#
+#     # 使用最终的映射关系进行反量化
+#     dequantized_data = Q.clone().float()
+#     for quantized_level, original_value in level_mapping.items():
+#         dequantized_data[Q == quantized_level] = original_value
+#
+#     return dequantized_data, hist_data
 
 
 #————————————————————————————————————————————————————————————————
 
 
+
+#————————————————————————————————————————————————————————————————
+#  动态量化级别缩减函数，支持动态反量化（调整后）
+# def dynamic_quantize_level_reduce_dequantize(Q, D, num_levels):
+#     unique_levels = torch.unique(Q)  # 提取 Q 中的唯一值
+#     unique_levels.sort()  # 排序
+#     iteration = 0  # 初始化循环计数器
+#     hist_data = []  # 用于保存每一步的直方图数据
+#     level_mapping = {}  # 动态记录每个量化级别的原始值（用于反量化）
+#
+#     # 初始化映射关系
+#     for level in unique_levels:
+#         level_mapping[level.item()] = [level.item()]  # 改为列表记录历史信息
+#
+#     while len(unique_levels) > num_levels:
+#         iteration += 1  # 循环次数加一
+#
+#         # 计算每一个level对应的误差
+#         E = (Q - D) ** 2
+#         # 计算每一个level对应的误差和
+#         E_sum = {level.item(): sum(E[Q == level]).item() for level in unique_levels}
+#         # 获得误差最小对应的level
+#         min_level = min(E_sum, key=E_sum.get)
+#         # 找到 min_level 在 unique_levels 中的索引位置
+#         min_level_idx = torch.where(unique_levels == min_level)[0].item()
+#
+#         # 设置默认值
+#         less_level = None
+#         more_level = None
+#
+#         # 根据 min_level_idx 位置，更新 Q 的值
+#         if min_level_idx == 0:  # 如果最小误差对应的level是第一个
+#             Q[Q == min_level] = unique_levels[1]
+#             replacement_level = unique_levels[1].item()
+#         elif min_level_idx == len(unique_levels) - 1:  # 如果最小误差对应的level是最后一个
+#             Q[Q == min_level] = unique_levels[-2]
+#             replacement_level = unique_levels[-2].item()
+#         else:
+#             # 找到相邻的量化级别
+#             less_level = unique_levels[min_level_idx - 1].item()
+#             more_level = unique_levels[min_level_idx + 1].item()
+#
+#             # 根据数据 D 的值决定替换到哪个级别
+#             Q[(Q == min_level) & (D <= min_level)] = less_level
+#             Q[(Q == min_level) & (D > min_level)] = more_level
+#
+#             # 动态确定替换的级别
+#             replacement_level = less_level if (Q[(Q == min_level) & (D <= min_level)] == less_level).sum() > \
+#                                               (Q[(Q == min_level) & (
+#                                                           D > min_level)] == more_level).sum() else more_level
+#
+#         # 更新映射关系
+#         if isinstance(replacement_level, torch.Tensor):  # 检查类型
+#             replacement_level = replacement_level.item()  # 转换为 Python 数值
+#
+#         # 更新 level_mapping（合并替换级别的历史信息）
+#         level_mapping[replacement_level].extend(level_mapping[min_level])
+#         del level_mapping[min_level]  # 删除已合并的级别
+#
+#         # 更新唯一值
+#         unique_levels = torch.unique(Q)
+#         unique_levels.sort()
+#
+#         # 保存直方图数据
+#         hist_data.append(Q.clone().numpy())
+#
+#         print(f"Iteration {iteration}:")
+#         print(f"Removed level: {min_level}, Updated level_mapping: {level_mapping}")
+#
+#     # 使用最终的映射关系进行反量化
+#     dequantized_data = Q.clone().float()
+#     for quantized_level, original_values in level_mapping.items():
+#         # 使用历史信息的均值作为反量化结果
+#         dequantized_data[Q == quantized_level] = sum(original_values) / len(original_values)
+#
+#     return dequantized_data, hist_data
+
+
+#————————————————————————————————————————————————————————————————
+
+
+# 2024/11/21
+# 反量化以后的less_level和more_level与min_level的间隔应该不一样，需要比较一下d-less_level和(less_level+more_level)/2也就是和中点比
+# Q[(Q == min_level) & (D - less_level_value < more_level_value - D)] = less_level
+# 算了干脆一步到位，更精确一点，不用中点间接看了，直接按照距离来分配不就行了
+
+# def dynamic_quantize_level_reduce_dequantize(Q, D, num_levels):
+#     """
+#     动态量化级别缩减函数，支持动态反量化（基于距离分配的改进版）。
+#
+#     参数:
+#         Q: torch.Tensor, 初始量化后的数据。
+#         D: torch.Tensor, 原始数据，用于计算误差。
+#         num_levels: int, 最终保留的量化级别数量。
+#
+#     返回:
+#         dequantized_data: torch.Tensor, 动态反量化后的数据。
+#         hist_data: list, 每次迭代后 Q 的分布。
+#     """
+#     unique_levels = torch.unique(Q)  # 提取 Q 中的唯一值
+#     unique_levels.sort()  # 排序
+#     iteration = 0  # 初始化循环计数器
+#     hist_data = []  # 用于保存每一步的直方图数据
+#     level_mapping = {}  # 动态记录每个量化级别的原始值（用于反量化）
+#
+#
+#     # 初始化映射关系
+#     for level in unique_levels:
+#         level_mapping[level.item()] = [level.item()]  # 改为列表记录历史信息
+#
+#     while len(unique_levels) > num_levels:
+#         iteration += 1  # 循环次数加一
+#
+#         # 计算每一个level对应的误差
+#         E = (Q - D) ** 2
+#         # 计算每一个level对应的误差和
+#         E_sum = {level.item(): sum(E[Q == level]).item() for level in unique_levels}
+#         # 获得误差最小对应的level
+#         min_level = min(E_sum, key=E_sum.get)
+#         # 找到 min_level 在 unique_levels 中的索引位置
+#         min_level_idx = torch.where(unique_levels == min_level)[0].item()
+#
+#         # 设置默认值
+#         less_level = None
+#         more_level = None
+#
+#         # 根据 min_level_idx 位置，更新 Q 的值
+#         if min_level_idx == 0:  # 如果最小误差对应的level是第一个
+#             Q[Q == min_level] = unique_levels[1]
+#             replacement_level = unique_levels[1].item()
+#         elif min_level_idx == len(unique_levels) - 1:  # 如果最小误差对应的level是最后一个
+#             Q[Q == min_level] = unique_levels[-2]
+#             replacement_level = unique_levels[-2].item()
+#         else:
+#             # 找到相邻的量化级别
+#             less_level = unique_levels[min_level_idx - 1].item()
+#             more_level = unique_levels[min_level_idx + 1].item()
+#
+#             # 获取反量化后的值
+#
+#
+#             # 方法1：均值
+#             less_level_value = sum(level_mapping[less_level]) / len(level_mapping[less_level])
+#             more_level_value = sum(level_mapping[more_level]) / len(level_mapping[more_level])
+#
+#
+#             # 根据距离动态分配到更接近的级别
+#             Q[(Q == min_level) & (abs(D - less_level_value) < abs(D - more_level_value))] = less_level
+#             Q[(Q == min_level) & (abs(D - less_level_value) >= abs(D - more_level_value))] = more_level
+#
+#             # 动态确定替换的级别
+#             replacement_level = less_level if abs(min_level - less_level) < abs(min_level - more_level) else more_level
+#
+#         # 更新映射关系
+#         if isinstance(replacement_level, torch.Tensor):  # 检查类型
+#             replacement_level = replacement_level.item()  # 转换为 Python 数值
+#
+#         # 合并映射关系，历史均值动态调整
+#         level_mapping[replacement_level].extend(level_mapping[min_level])
+#         del level_mapping[min_level]  # 删除已合并的级别
+#
+#         # 更新唯一值
+#         unique_levels = torch.unique(Q)
+#         unique_levels.sort()
+#
+#         # 保存直方图数据
+#         hist_data.append(Q.clone().numpy())
+#
+#         print(f"Iteration {iteration}:")
+#         print(f"Removed level: {min_level}, Updated level_mapping: {level_mapping}")
+#
+#     # 使用最终的映射关系进行反量化
+#     dequantized_data = Q.clone().float()
+#     for quantized_level, original_values in level_mapping.items():
+#         # 使用历史信息的均值作为反量化结果
+#         dequantized_data[Q == quantized_level] = sum(original_values) / len(original_values)
+#
+#     return dequantized_data, hist_data
+
+
+# def dynamic_quantize_level_reduce_dequantize(Q, D, num_levels):
+#     """
+#     动态量化级别缩减函数，支持动态反量化（改进版，无固定 replacement_level）。
+#
+#     参数:
+#         Q: torch.Tensor, 初始量化后的数据。
+#         D: torch.Tensor, 原始数据，用于计算误差。
+#         num_levels: int, 最终保留的量化级别数量。
+#
+#     返回:
+#         dequantized_data: torch.Tensor, 动态反量化后的数据。
+#         hist_data: list, 每次迭代后 Q 的分布。
+#     """
+#     unique_levels = torch.unique(Q)  # 提取 Q 中的唯一值
+#     unique_levels.sort()  # 排序
+#     iteration = 0  # 初始化循环计数器
+#     hist_data = []  # 用于保存每一步的直方图数据
+#     level_mapping = {}  # 动态映射字典，动态记录每个量化级别的原始值（用于反量化）
+#
+#     # 初始化映射关系
+#     for level in unique_levels:
+#         level_mapping[level.item()] = [level.item()]  # 改为列表记录历史信息
+#
+#     while len(unique_levels) > num_levels:
+#         iteration += 1  # 循环次数加一
+#
+#         # 计算每一个level对应的误差
+#         E = (Q - D) ** 2
+#         # 计算每一个level对应的误差和
+#         E_sum = {level.item(): sum(E[Q == level]).item() for level in unique_levels}
+#         # 获得误差最小对应的level
+#         min_level = min(E_sum, key=E_sum.get)
+#         # 找到 min_level 在 unique_levels 中的索引位置
+#         min_level_idx = torch.where(unique_levels == min_level)[0].item()
+#
+#         # 设置默认值
+#         less_level = None
+#         more_level = None
+#
+#         # 根据 min_level_idx 位置，更新 Q 的值
+#         if min_level_idx == 0:  # 如果最小误差对应的level是第一个
+#             Q[Q == min_level] = unique_levels[1]
+#             less_level = unique_levels[1].item()
+#         elif min_level_idx == len(unique_levels) - 1:  # 如果最小误差对应的level是最后一个
+#             Q[Q == min_level] = unique_levels[-2]
+#             more_level = unique_levels[-2].item()
+#         else:
+#             # 找到相邻的量化级别
+#             less_level = unique_levels[min_level_idx - 1].item()
+#             more_level = unique_levels[min_level_idx + 1].item()
+#
+#             # 获取反量化后的值
+#             less_level_value = sum(level_mapping[less_level]) / len(level_mapping[less_level])
+#             more_level_value = sum(level_mapping[more_level]) / len(level_mapping[more_level])
+#
+#             # 根据距离动态分配到更接近的级别
+#             Q[(Q == min_level) & (abs(D - less_level_value) < abs(D - more_level_value))] = less_level
+#             Q[(Q == min_level) & (abs(D - less_level_value) >= abs(D - more_level_value))] = more_level
+#
+#         # 动态更新 level_mapping
+#         if less_level is not None:
+#             level_mapping[less_level].extend(level_mapping[min_level])
+#         if more_level is not None:
+#             level_mapping[more_level].extend(level_mapping[min_level])
+#         del level_mapping[min_level]  # 删除已合并的级别
+#
+#         # 更新唯一值
+#         unique_levels = torch.unique(Q)
+#         unique_levels.sort()
+#
+#         # 保存直方图数据
+#         hist_data.append(Q.clone().numpy())
+#
+#         print(f"Iteration {iteration}:")
+#         print(f"Removed level: {min_level}, Updated level_mapping: {level_mapping}")
+#
+#     # 使用最终的映射关系进行反量化
+#     dequantized_data = Q.clone().float()
+#     for quantized_level, original_values in level_mapping.items():
+#         # 使用历史信息的均值作为反量化结果，历史均值可以有效地平滑分布，避免偏向最后一次合并的值
+#         dequantized_data[Q == quantized_level] = sum(original_values) / len(original_values)
+#
+#     return dequantized_data, hist_data
+
+
+
+#————————————————————————————————————————————————————————————————
+
+
+
+
+#————————————————————————————————————————————————————————————————
+# 去掉本level后算其他误差的代码版本
+# def dynamic_quantize_level_reduce_dequantize_2(Q, D, num_levels):
+#     """
+#     动态量化级别缩减函数（第二版本，支持动态反量化）。
+#
+#     参数:
+#         Q: torch.Tensor, 初始量化后的数据。
+#         D: torch.Tensor, 原始数据，用于计算误差。
+#         num_levels: int, 最终保留的量化级别数量。
+#
+#     返回:
+#         dequantized_data: torch.Tensor, 动态反量化后的数据。
+#         hist_data: list, 每次迭代后 Q 的分布。
+#     """
+#     unique_levels = torch.unique(Q)  # 提取 Q 中的唯一值
+#     unique_levels.sort()  # 排序
+#     iteration = 0  # 初始化循环计数器
+#     hist_data = []  # 用于保存每一步的直方图数据
+#     level_mapping = {}  # 动态映射字典，动态记录每个量化级别的原始值（用于反量化）
+#
+#     # 初始化映射关系
+#     for level in unique_levels:
+#         level_mapping[level.item()] = level.item()
+#
+#     while len(unique_levels) > num_levels:
+#         iteration += 1  # 循环次数加一
+#
+#         total_errors = {}  # 用于存储去掉每个level后的总误差
+#
+#         # 遍历每个level，模拟其被移除后的情况
+#         for min_level in unique_levels:
+#             Q_copy = Q.clone()  # 创建 Q 的副本
+#
+#             # 找到 min_level 的索引位置
+#             min_level_idx = torch.where(unique_levels == min_level)[0].item()
+#
+#             # 设置默认值
+#             less_level = None
+#             more_level = None
+#
+#             # 模拟移除逻辑
+#             if min_level_idx == 0:  # 如果是第一个级别
+#                 Q_copy[Q == min_level] = unique_levels[1]
+#             elif min_level_idx == len(unique_levels) - 1:  # 如果是最后一个级别
+#                 Q_copy[Q == min_level] = unique_levels[-2]
+#             else:  # 如果是中间级别
+#                 less_level = unique_levels[min_level_idx - 1].item()
+#                 more_level = unique_levels[min_level_idx + 1].item()
+#
+#                 # 根据数据 D 的值决定替换到哪个级别
+#                 Q_copy[(Q == min_level) & (D <= min_level)] = less_level
+#                 Q_copy[(Q == min_level) & (D > min_level)] = more_level
+#
+#             # 计算移除当前level后的总误差
+#             total_error = ((Q_copy - D) ** 2).sum().item()
+#             total_errors[min_level.item()] = total_error
+#
+#         # 找到移除后误差最小的量化级别
+#         level_to_remove = min(total_errors, key=total_errors.get)
+#
+#         # 找到被移除级别的索引位置
+#         level_to_remove_idx = torch.where(unique_levels == level_to_remove)[0].item()
+#
+#         # 确定替换后的级别
+#         if level_to_remove_idx == 0:  # 如果是第一个级别
+#             Q[Q == level_to_remove] = unique_levels[1]
+#             replacement_level = unique_levels[1].item()
+#         elif level_to_remove_idx == len(unique_levels) - 1:  # 如果是最后一个级别
+#             Q[Q == level_to_remove] = unique_levels[-2]
+#             replacement_level = unique_levels[-2].item()
+#         else:  # 如果是中间级别
+#             less_level = unique_levels[level_to_remove_idx - 1].item()
+#             more_level = unique_levels[level_to_remove_idx + 1].item()
+#
+#             # 根据数据 D 的值决定替换到哪个级别
+#             Q[(Q == level_to_remove) & (D <= level_to_remove)] = less_level
+#             Q[(Q == level_to_remove) & (D > level_to_remove)] = more_level
+#
+#             # 动态确定替换的级别
+#             replacement_level = less_level if (Q[(Q == level_to_remove) & (D <= level_to_remove)] == less_level).sum() > \
+#                                              (Q[(Q == level_to_remove) & (D > level_to_remove)] == more_level).sum() else more_level
+#
+#         # 更新映射关系
+#         level_mapping[replacement_level] = (level_mapping[replacement_level] + level_mapping[level_to_remove]) / 2
+#         del level_mapping[level_to_remove]  # 删除已合并的级别
+#
+#         # 更新唯一值
+#         unique_levels = torch.unique(Q)
+#         unique_levels.sort()
+#
+#         # 保存直方图数据
+#         hist_data.append(Q.clone().numpy())
+#
+#         print(f"Iteration {iteration}:")
+#         print(f"Removed level: {level_to_remove}, Updated level_mapping: {level_mapping}")
+#
+#     # 使用最终的映射关系进行反量化
+#     dequantized_data = Q.clone().float()
+#     for quantized_level, original_value in level_mapping.items():
+#         dequantized_data[Q == quantized_level] = original_value
+#
+#     return dequantized_data, hist_data
+
+#————————————————————————————————————————————————————————————————
+
+
+
+
+#————————————————————————————————————————————————————————————————
+# def dynamic_quantize_level_reduce_dequantize_2(Q, D, num_levels):
+#     """
+#     动态量化级别缩减函数（基于距离分配的改进版，支持动态反量化）。
+#
+#     参数:
+#         Q: torch.Tensor, 初始量化后的数据。
+#         D: torch.Tensor, 原始数据，用于计算误差。
+#         num_levels: int, 最终保留的量化级别数量。
+#
+#     返回:
+#         dequantized_data: torch.Tensor, 动态反量化后的数据。
+#         hist_data: list, 每次迭代后 Q 的分布。
+#     """
+#     unique_levels = torch.unique(Q)  # 提取 Q 中的唯一值
+#     unique_levels.sort()  # 排序
+#     iteration = 0  # 初始化循环计数器
+#     hist_data = []  # 用于保存每一步的直方图数据
+#     level_mapping = {}  # 动态映射字典，动态记录每个量化级别的原始值（用于反量化）
+#
+#     # 初始化映射关系
+#     for level in unique_levels:
+#         level_mapping[level.item()] = [level.item()]  # 改为列表记录历史信息
+#
+#     while len(unique_levels) > num_levels:
+#         iteration += 1  # 循环次数加一
+#
+#         total_errors = {}  # 用于存储去掉每个level后的总误差
+#
+#         # 遍历每个level，模拟其被移除后的情况
+#         for min_level in unique_levels:
+#             Q_copy = Q.clone()  # 创建 Q 的副本
+#
+#             # 找到 min_level 的索引位置
+#             min_level_idx = torch.where(unique_levels == min_level)[0].item()
+#
+#             # 设置默认值
+#             less_level = None
+#             more_level = None
+#
+#             # 模拟移除逻辑
+#             if min_level_idx == 0:  # 如果是第一个级别
+#                 Q_copy[Q == min_level] = unique_levels[1]
+#             elif min_level_idx == len(unique_levels) - 1:  # 如果是最后一个级别
+#                 Q_copy[Q == min_level] = unique_levels[-2]
+#             else:  # 如果是中间级别
+#                 less_level = unique_levels[min_level_idx - 1].item()
+#                 more_level = unique_levels[min_level_idx + 1].item()
+#
+#                 # 获取反量化后的值
+#                 less_level_value = sum(level_mapping[less_level]) / len(level_mapping[less_level])
+#                 more_level_value = sum(level_mapping[more_level]) / len(level_mapping[more_level])
+#
+#                 # 根据距离动态分配到更接近的级别
+#                 Q_copy[(Q == min_level) & (abs(D - less_level_value) < abs(D - more_level_value))] = less_level
+#                 Q_copy[(Q == min_level) & (abs(D - less_level_value) >= abs(D - more_level_value))] = more_level
+#
+#             # 计算移除当前level后的总误差
+#             total_error = ((Q_copy - D) ** 2).sum().item()
+#             total_errors[min_level.item()] = total_error
+#
+#         # 找到移除后误差最小的量化级别
+#         level_to_remove = min(total_errors, key=total_errors.get)
+#
+#         # 找到被移除级别的索引位置
+#         level_to_remove_idx = torch.where(unique_levels == level_to_remove)[0].item()
+#
+#         # 确定替换后的级别
+#         if level_to_remove_idx == 0:  # 如果是第一个级别
+#             Q[Q == level_to_remove] = unique_levels[1]
+#             replacement_level = unique_levels[1].item()
+#         elif level_to_remove_idx == len(unique_levels) - 1:  # 如果是最后一个级别
+#             Q[Q == level_to_remove] = unique_levels[-2]
+#             replacement_level = unique_levels[-2].item()
+#         else:  # 如果是中间级别
+#             less_level = unique_levels[level_to_remove_idx - 1].item()
+#             more_level = unique_levels[level_to_remove_idx + 1].item()
+#
+#             # 获取反量化后的值
+#             less_level_value = sum(level_mapping[less_level]) / len(level_mapping[less_level])
+#             more_level_value = sum(level_mapping[more_level]) / len(level_mapping[more_level])
+#
+#             # 根据距离动态分配到更接近的级别
+#             Q[(Q == level_to_remove) & (abs(D - less_level_value) < abs(D - more_level_value))] = less_level
+#             Q[(Q == level_to_remove) & (abs(D - less_level_value) >= abs(D - more_level_value))] = more_level
+#
+#             # 动态确定替换的级别
+#             replacement_level = less_level if (abs(D - less_level_value) < abs(D - more_level_value)).sum() > \
+#                                               (abs(D - more_level_value) <= abs(
+#                                                   D - less_level_value)).sum() else more_level
+#
+#         # 更新映射关系
+#         level_mapping[replacement_level].extend(level_mapping[level_to_remove])
+#         del level_mapping[level_to_remove]  # 删除已合并的级别
+#
+#         # 更新唯一值
+#         unique_levels = torch.unique(Q)
+#         unique_levels.sort()
+#
+#         # 保存直方图数据
+#         hist_data.append(Q.clone().numpy())
+#
+#         print(f"Iteration {iteration}:")
+#         print(f"Removed level: {level_to_remove}, Updated level_mapping: {level_mapping}")
+#
+#     # 使用最终的映射关系进行反量化
+#     dequantized_data = Q.clone().float()
+#     for quantized_level, original_values in level_mapping.items():
+#         # 使用历史信息的均值作为反量化结果
+#         dequantized_data[Q == quantized_level] = sum(original_values) / len(original_values)
+#
+#     return dequantized_data, hist_data
+
+#————————————————————————————————————————————————————————————————
+
+
+#————————————————————————————————————————————————————————————————
+# 终极版，去掉本level后算其他误差的代码版本，n1=4，反量化距离优化版
+# 目前效果最好的版本，只有多峰分布不够好，其他全都比均匀量化好
+def dynamic_quantize_level_reduce_dequantize_2(Q, D, num_levels):
+    unique_levels = torch.unique(Q)  # 提取 Q 中的唯一值
+    unique_levels.sort()  # 排序
+    iteration = 0  # 初始化循环计数器
+    hist_data = []  # 用于保存每一步的直方图数据
+    level_mapping = {}  # 动态映射字典，动态记录每个量化级别的原始值（用于反量化）
+
+    # 初始化映射关系，将键转换为浮点数
+    for level in unique_levels:
+        level_mapping[float(level.item())] = float(level.item())
+
+    while len(unique_levels) > num_levels:
+        iteration += 1  # 循环次数加一
+
+        total_errors = {}  # 用于存储去掉每个level后的总误差
+
+        # 遍历每个level，模拟其被移除后的情况
+        for min_level in unique_levels:
+            min_level = float(min_level.item())  # 确保是浮点数
+            Q_copy = Q.clone()  # 创建 Q 的副本
+            # 找到 min_level 的索引位置
+            min_level_idx = torch.where(unique_levels == min_level)[0].item()
+
+            # 设置默认值
+            less_level = None
+            more_level = None
+
+            # 模拟移除逻辑
+            if min_level_idx == 0:  # 如果是第一个级别
+                replacement_level = unique_levels[1]
+            elif min_level_idx == len(unique_levels) - 1:  # 如果是最后一个级别
+                replacement_level = unique_levels[-2]
+            else:  # 如果是中间级别
+                less_level = float(unique_levels[min_level_idx - 1].item())
+                more_level = float(unique_levels[min_level_idx + 1].item())
+
+                # 基于反量化值的距离计算
+                less_level_value = level_mapping[less_level]
+                more_level_value = level_mapping[more_level]
+                min_level_value = level_mapping[min_level]
+
+                replacement_level = (
+                    less_level
+                    if abs(min_level_value - less_level_value) < abs(min_level_value - more_level_value)
+                    else more_level
+                )
+
+            # 更新 Q_copy 中的值
+            Q_copy[Q == min_level] = replacement_level
+
+            # 计算移除当前level后的总误差
+            total_error = ((Q_copy - D) ** 2).sum().item()
+            total_errors[min_level] = total_error
+
+        # 找到移除后误差最小的量化级别
+        level_to_remove = min(total_errors, key=total_errors.get)
+        level_to_remove_loss = total_errors[level_to_remove]
+        print(f"Iteration {iteration}:")
+        print("Loss for each level after removing:")
+        for idx, (level, loss) in enumerate(total_errors.items()):
+            print(f"  [{idx}] Level {level}: {loss:.3f}")
+        print(f"  -> Min loss level: {level_to_remove}, Loss: {level_to_remove_loss:.3f}")
+
+        # 找到被移除级别的索引位置
+        level_to_remove_idx = torch.where(unique_levels == level_to_remove)[0].item()
+
+        # 确定替换后的级别
+        if level_to_remove_idx == 0:  # 如果是第一个级别
+            replacement_level = unique_levels[1]
+        elif level_to_remove_idx == len(unique_levels) - 1:  # 如果是最后一个级别
+            replacement_level = unique_levels[-2]
+        else:  # 如果是中间级别
+            less_level = float(unique_levels[level_to_remove_idx - 1].item())
+            more_level = float(unique_levels[level_to_remove_idx + 1].item())
+
+            # 基于反量化值的距离计算
+            less_level_value = level_mapping[less_level]
+            more_level_value = level_mapping[more_level]
+            level_to_remove_value = level_mapping[level_to_remove]
+
+            replacement_level = (
+                less_level
+                if abs(level_to_remove_value - less_level_value) < abs(level_to_remove_value - more_level_value)
+                else more_level
+            )
+
+        # 更新 Q 中的值
+        Q[Q == level_to_remove] = replacement_level
+
+        # 更新映射关系
+        replacement_level = float(replacement_level)  # 确保键为浮点数
+        level_mapping[replacement_level] = (level_mapping[replacement_level] + level_mapping[level_to_remove]) / 2
+        del level_mapping[level_to_remove]  # 删除已合并的级别
+
+        # 更新唯一值
+        unique_levels = torch.unique(Q)
+        unique_levels.sort()
+
+        # 保存直方图数据
+        hist_data.append(Q.clone().numpy())
+
+        # 打印当前迭代信息
+        print(f"  Removed level {level_to_remove}, replaced with {replacement_level}")
+        print(f"  Updated level_mapping: {level_mapping}\n")
+
+    # 使用最终的映射关系进行反量化
+    dequantized_data = Q.clone().float()
+    for quantized_level, original_value in level_mapping.items():
+        quantized_level = float(quantized_level)  # 确保类型一致
+        dequantized_data[Q == quantized_level] = original_value
+
+    return dequantized_data, hist_data
+#————————————————————————————————————————————————————————————————
