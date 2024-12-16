@@ -1143,10 +1143,12 @@ def dynamic_quantize_level_reduce_dequantize_2(Q, D, num_levels):
         print("Loss for each level after removing:")
         for idx, (level, loss) in enumerate(total_errors.items()):
             print(f"  [{idx}] Level {level}: {loss:.3f}")
-        print(f"  -> Min loss level: {level_to_remove}, Loss: {level_to_remove_loss:.3f}")
+
 
         # 找到被移除级别的索引位置
         level_to_remove_idx = torch.where(unique_levels == level_to_remove)[0].item()
+
+        print(f"  -> Min loss level: {level_to_remove}(Index: [{level_to_remove_idx}]), Loss: {level_to_remove_loss:.3f}")
 
         # 确定替换后的级别
         if level_to_remove_idx == 0:  # 如果是第一个级别
@@ -1193,5 +1195,163 @@ def dynamic_quantize_level_reduce_dequantize_2(Q, D, num_levels):
         quantized_level = float(quantized_level)  # 确保类型一致
         dequantized_data[Q == quantized_level] = original_value
 
-    return dequantized_data, hist_data
+    return dequantized_data, hist_data, Q
+#————————————————————————————————————————————————————————————————
+
+
+
+
+#——————————————————————————新版合并的量化函数————————————————————————
+
+def new_dynamic_quantize(data, initial_levels, target_levels, verbose=True):
+    """
+    新的动态量化函数,包含以下改进:
+    1. 对原始数据进行相同的平移缩放操作(但不量化),用于准确计算误差
+    2. 初始均匀量化
+    3. 动态量化(使用scaled_data计算误差)
+    4. 最终的均匀反量化
+
+    参数：
+        data: torch.Tensor, 需要量化的输入数据
+        initial_levels: int, 初始量化级别数
+        target_levels: int, 动态量化后的目标级别数
+        verbose: bool, 是否打印详细信息
+    """
+    # 步骤1：计算缩放参数
+    min_val = torch.min(data)
+    max_val = torch.max(data)
+    interval_size = (max_val - min_val) / initial_levels
+
+    if verbose:
+        print(f"\n初始均匀量化:")
+        print(f"数据范围: [{min_val:.4f}, {max_val:.4f}]")
+        print(f"量化区间大小: {interval_size:.4f}")
+
+    # 对原始数据进行相同的平移缩放操作(但不量化)
+    scaled_data = (data - min_val - interval_size / 2) / interval_size
+
+    # 执行初始量化
+    quantized_data = torch.round(scaled_data)
+    quantized_data = torch.clamp(quantized_data, 0, initial_levels - 1)
+
+    if verbose:
+        print(f"初始量化后的级别数: {len(torch.unique(quantized_data))}")
+
+    # 步骤2：动态量化
+    unique_levels = torch.unique(quantized_data)
+    unique_levels.sort()
+    iteration = 0
+    hist_data = []
+
+    # 初始化level_mapping字典
+    level_mapping = {}
+    for level in unique_levels:
+        level_mapping[float(level.item())] = float(level.item())
+
+    if verbose:
+        print("\n开始动态量化过程...")
+
+    while len(unique_levels) > target_levels:
+        iteration += 1
+        if verbose:
+            print(f"\n迭代 {iteration}:")
+            print(f"当前量化级别: {unique_levels.tolist()}")
+            print(f"剩余级别数: {len(unique_levels)}")
+
+        total_errors = {}  # 存储移除每个级别后的误差
+
+        # 尝试移除每个级别并计算产生的误差
+        for level in unique_levels:
+            level = float(level.item())
+            Q_copy = quantized_data.clone()
+            level_idx = torch.where(unique_levels == level)[0].item()
+
+            if level_idx == 0:  # 第一个级别
+                replacement = unique_levels[1]
+            elif level_idx == len(unique_levels) - 1:  # 最后一个级别
+                replacement = unique_levels[-2]
+            else:  # 中间级别
+                less_level = float(unique_levels[level_idx - 1].item())
+                more_level = float(unique_levels[level_idx + 1].item())
+
+                # 基于反量化值的距离计算
+                less_level_value = level_mapping[less_level]
+                more_level_value = level_mapping[more_level]
+                min_level_value = level_mapping[level]
+
+                replacement = (
+                    less_level
+                    if abs(min_level_value - less_level_value) < abs(min_level_value - more_level_value)
+                    else more_level
+                )
+
+            Q_copy[Q_copy == level] = replacement
+
+            # 使用scaled_data计算误差，而不是原始data
+            total_error = ((Q_copy - scaled_data) ** 2).sum().item()
+            total_errors[level] = total_error
+
+        # 找到移除时产生最小误差的级别
+        level_to_remove = min(total_errors, key=total_errors.get)
+        level_idx = torch.where(unique_levels == level_to_remove)[0].item()
+
+        if verbose:
+            print("\n各级别移除后的误差:")
+            for idx, (level, error) in enumerate(total_errors.items()):
+                print(f"  [{idx}] 级别 {level}: {error:.4f}")
+            print(f"  -> 选择移除级别: {level_to_remove} (索引: [{level_idx}])")
+
+        # 移除选定的级别
+        if level_idx == 0:
+            replacement = unique_levels[1]
+        elif level_idx == len(unique_levels) - 1:
+            replacement = unique_levels[-2]
+        else:
+            less_level = float(unique_levels[level_idx - 1].item())
+            more_level = float(unique_levels[level_idx + 1].item())
+
+            less_level_value = level_mapping[less_level]
+            more_level_value = level_mapping[more_level]
+            level_to_remove_value = level_mapping[level_to_remove]
+
+            replacement = (
+                less_level
+                if abs(level_to_remove_value - less_level_value) < abs(level_to_remove_value - more_level_value)
+                else more_level
+            )
+
+        # 更新量化数据
+        quantized_data[quantized_data == level_to_remove] = replacement
+
+        # 更新level_mapping
+        if float(level_to_remove) in level_mapping:
+            replacement_value = float(replacement)
+            level_mapping[replacement_value] = (level_mapping[replacement_value] + level_mapping[
+                float(level_to_remove)]) / 2
+            del level_mapping[float(level_to_remove)]
+
+        if verbose:
+            print(f"  将级别 {level_to_remove} 替换为 {replacement}")
+            print(f"  更新后的映射关系: {level_mapping}")
+
+        unique_levels = torch.unique(quantized_data)
+        unique_levels.sort()
+        hist_data.append(quantized_data.clone().numpy())
+
+    # 步骤3：最终反量化
+    scale = interval_size
+    bias = min_val + interval_size / 2
+    final_dequantized = quantized_data * scale + bias
+
+    if verbose:
+        print("\n量化过程完成:")
+        print(f"最终量化级别: {unique_levels.tolist()}")
+        print(f"最终级别数: {len(unique_levels)}")
+        # 使用原始data计算最终误差
+        final_error = ((final_dequantized - data) ** 2).mean()
+        print(f"最终均方误差: {final_error:.6f}")
+        print(f"最终映射关系: {level_mapping}")
+
+    return final_dequantized, hist_data, quantized_data, scale, bias
+
 #————————————————————————————————————————————————————————————————
