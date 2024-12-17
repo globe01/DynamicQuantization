@@ -1,5 +1,8 @@
+import os
+
 import torch
 import numpy as np
+from matplotlib import pyplot as plt
 from scipy.stats import gaussian_kde
 
 
@@ -729,3 +732,141 @@ def compute_mse(original, quantized):
         float: 均方误差值
     """
     return ((original - quantized) ** 2).mean().item()
+
+
+
+
+def plot_quantization_results(original: torch.Tensor,
+                              first_quant: torch.Tensor,
+                              second_quant: torch.Tensor,
+                              layer_name: str,
+                              uniform_quant: torch.Tensor,
+                              save_dir: str):
+    """绘制量化结果对比图"""
+    plt.figure(figsize=(20, 5))
+
+    plt.subplot(1, 4, 1)
+    plt.hist(original.numpy().flatten(), bins=100, color='blue', alpha=0.7)
+    plt.title("Original Weight Distribution")
+    plt.xlabel("Value")
+    plt.ylabel("Frequency")
+
+    plt.subplot(1, 4, 2)
+    plt.hist(first_quant.flatten(), bins=100, color='green', alpha=0.7)
+    plt.title(f"First Quantization (16 levels)")
+    plt.xlabel("Value")
+    plt.ylabel("Frequency")
+
+    plt.subplot(1, 4, 3)
+    plt.hist(second_quant.numpy().flatten(), bins=100, color='red', alpha=0.7)
+    plt.title(f"Dynamic Quantization (8 levels)")
+    plt.xlabel("Value")
+    plt.ylabel("Frequency")
+
+    plt.subplot(1, 4, 4)
+    plt.hist(uniform_quant.numpy().flatten(), bins=100, color='purple', alpha=0.7)
+    plt.title(f"Uniform Quantization (8 levels)")
+    plt.xlabel("Value")
+    plt.ylabel("Frequency")
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, f"{layer_name}_quantization.png"))
+    plt.close()
+
+def save_quantization_results(name: str,
+                              quantized_data: torch.Tensor,
+                              dynamic_error: float,
+                              uniform_error: float,
+                              scale: float,
+                              bias: float,
+                              target_levels: int,
+                              save_dir: str):
+    """保存量化结果，包括误差、量化数据和codebook"""
+    try:
+        # 保存误差结果
+        with open(os.path.join(save_dir, f"{name}_errors.txt"), "w") as f:
+            f.write("Dynamic MSE  Uniform MSE\n")
+            f.write(f"{dynamic_error:.6f} {uniform_error:.6f}")
+        print(f"误差数据已保存")
+
+        # 保存原始量化数据
+        try:
+            output_file = os.path.join(save_dir, f"{name}_quantized_data.txt")
+            np.savetxt(output_file, quantized_data.numpy(), fmt="%d",
+                       header="Dynamic Quantized Data", comments="")
+            print(f"原始量化数据已保存至: {output_file}")
+        except Exception as e:
+            print(f"保存原始量化数据时出错: {e}")
+            return
+
+        # 获取唯一的量化值并排序
+        try:
+            unique_quantized = torch.unique(quantized_data).numpy().astype(int)
+            unique_quantized.sort()
+            target_levels_array = np.arange(target_levels)
+
+            if len(unique_quantized) != len(target_levels_array):
+                print(f"警告: 量化值数量 {len(unique_quantized)} 与目标级别数 {len(target_levels_array)} 不匹配")
+                print(f"唯一量化值: {unique_quantized}")
+                print(f"目标级别: {target_levels_array}")
+                return
+        except Exception as e:
+            print(f"处理唯一量化值时出错: {e}")
+            return
+
+        # 创建和保存 code book
+        try:
+            code_book = np.column_stack((
+                target_levels_array,
+                unique_quantized,
+                unique_quantized - target_levels_array,
+                np.full_like(target_levels_array, scale, dtype=float),
+                np.full_like(target_levels_array, bias, dtype=float)
+            ))
+
+            code_book_file = os.path.join(save_dir, f"{name}_code_book.txt")
+            np.savetxt(code_book_file, code_book,
+                       fmt=['%d', '%d', '%d', '%.6f', '%.6f'],
+                       header="Target_Level Quantized_Value Mapping_Difference Scale Bias",
+                       comments="")
+            print(f"Code book已保存至: {code_book_file}")
+        except Exception as e:
+            print(f"创建或保存code book时出错: {e}")
+            return
+
+        # 创建映射字典和转换后的量化数据
+        try:
+            # 创建映射字典
+            mapping_dict = {int(orig): int(target) for target, orig in zip(target_levels_array, unique_quantized)}
+
+            # 将量化数据转换为numpy数组进行处理
+            quantized_numpy = quantized_data.numpy()
+
+            # 使用numpy的vectorize功能创建映射函数
+            vectorized_map = np.vectorize(lambda x: mapping_dict[int(x)])
+
+            # 应用映射
+            quantized_mapped = vectorized_map(quantized_numpy)
+
+            # 进行平移操作
+            quantized_shifted = quantized_mapped - (target_levels // 2)
+
+            # 保存转换后的量化数据
+            transformed_output_file = os.path.join(save_dir, f"{name}_quantized_data_after_transformation.txt")
+            np.savetxt(transformed_output_file, quantized_shifted, fmt="%d",
+                       header=f"Transformed Quantized Data (Range: -{target_levels // 2} to {target_levels // 2 - 1})",
+                       comments="")
+            print(f"转换后的量化数据已保存至: {transformed_output_file}")
+
+            # 打印一些统计信息用于调试
+            print(f"\n数据统计:")
+            print(f"转换前的唯一值: {np.unique(quantized_numpy).tolist()}")
+            print(f"映射后的唯一值: {np.unique(quantized_mapped).tolist()}")
+            print(f"平移后的唯一值: {np.unique(quantized_shifted).tolist()}")
+        except Exception as e:
+            print(f"创建或保存转换后的量化数据时出错: {e}")
+            print(f"错误详情: {str(e)}")
+            return
+
+    except Exception as e:
+        print(f"保存量化结果时发生错误: {e}")
