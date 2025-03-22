@@ -1,0 +1,4 @@
+Configuration	Perplexity	Evaluation Time (s)	Quantization Error
+Original (FP32)	14.4150	7.38	N/A
+Dynamic (32→16)	20.0831	12.47	0.30411625532356473
+Uniform (16)	19.9430	13.01	0.002796304767148935
