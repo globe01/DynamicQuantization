@@ -1,0 +1,17 @@
+激活值: layer_13_self_attn_output_input2
+特殊程度分数: 34.500081
+
+统计信息:
+mean: -0.000589
+std: 0.078266
+min: -1.827529
+max: 2.204720
+range: 4.032248
+skewness: 0.719128
+kurtosis: 32.798263
+q1: -0.047444
+q3: 0.046192
+iqr: 0.093636
+zero_ratio: 0.000015
+extreme_ratio: 0.005356
+gini_like: 0.437775

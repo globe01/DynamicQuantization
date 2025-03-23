@@ -1,0 +1,17 @@
+激活值: layer_21_input_ln_output_input8
+特殊程度分数: 39.711430
+
+统计信息:
+mean: 0.003313
+std: 0.450079
+min: -8.763845
+max: 9.768902
+range: 18.532747
+skewness: 0.619372
+kurtosis: 37.989963
+q1: -0.232630
+q3: 0.238254
+iqr: 0.470884
+zero_ratio: 0.000000
+extreme_ratio: 0.005081
+gini_like: 0.500236

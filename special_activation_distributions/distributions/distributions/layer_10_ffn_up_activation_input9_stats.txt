@@ -1,0 +1,17 @@
+激活值: layer_10_ffn_up_activation_input9
+特殊程度分数: 2.251720
+
+统计信息:
+mean: -0.001195
+std: 0.297417
+min: -2.367293
+max: 2.443356
+range: 4.810649
+skewness: -0.008251
+kurtosis: 1.172969
+q1: -0.174929
+q3: 0.172425
+iqr: 0.347354
+zero_ratio: 0.000011
+extreme_ratio: 0.007802
+gini_like: 0.457224

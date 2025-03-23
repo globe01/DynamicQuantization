@@ -1,0 +1,17 @@
+激活值: layer_21_mlp_output_input0
+特殊程度分数: 4.176450
+
+统计信息:
+mean: -0.000883
+std: 0.223832
+min: -1.705813
+max: 3.644476
+range: 5.350289
+skewness: 0.111160
+kurtosis: 2.944330
+q1: -0.127008
+q3: 0.124254
+iqr: 0.251262
+zero_ratio: 0.000000
+extreme_ratio: 0.006855
+gini_like: 0.491933

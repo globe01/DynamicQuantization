@@ -1,0 +1,17 @@
+激活值: layer_6_v_activation_input3
+特殊程度分数: 3.966585
+
+统计信息:
+mean: 0.004112
+std: 0.312275
+min: -2.234860
+max: 3.086642
+range: 5.321502
+skewness: -0.008110
+kurtosis: 2.736452
+q1: -0.161864
+q3: 0.174430
+iqr: 0.336295
+zero_ratio: 0.000033
+extreme_ratio: 0.010286
+gini_like: 0.508122

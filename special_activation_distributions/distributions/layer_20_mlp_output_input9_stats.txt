@@ -1,0 +1,17 @@
+激活值: layer_20_mlp_output_input9
+特殊程度分数: 4.166512
+
+统计信息:
+mean: 0.000742
+std: 0.255669
+min: -2.203673
+max: 4.147590
+range: 6.351263
+skewness: 0.175510
+kurtosis: 2.912225
+q1: -0.150494
+q3: 0.149606
+iqr: 0.300100
+zero_ratio: 0.000014
+extreme_ratio: 0.006333
+gini_like: 0.476045

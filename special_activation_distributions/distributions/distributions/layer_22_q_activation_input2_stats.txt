@@ -1,0 +1,17 @@
+激活值: layer_22_q_activation_input2
+特殊程度分数: 28.263305
+
+统计信息:
+mean: 0.027242
+std: 1.263141
+min: -14.499245
+max: 13.728091
+range: 28.227337
+skewness: 0.910350
+kurtosis: 25.988291
+q1: -0.465595
+q3: 0.470313
+iqr: 0.935908
+zero_ratio: 0.000000
+extreme_ratio: 0.014160
+gini_like: 0.540730

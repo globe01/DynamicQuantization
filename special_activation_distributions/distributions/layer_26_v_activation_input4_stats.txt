@@ -1,0 +1,17 @@
+激活值: layer_26_v_activation_input4
+特殊程度分数: 2.458194
+
+统计信息:
+mean: -0.004104
+std: 0.590640
+min: -5.065573
+max: 5.336335
+range: 10.401909
+skewness: 0.012922
+kurtosis: 1.312169
+q1: -0.344604
+q3: 0.333653
+iqr: 0.678257
+zero_ratio: 0.000000
+extreme_ratio: 0.007129
+gini_like: 0.495263

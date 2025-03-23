@@ -1,0 +1,17 @@
+激活值: layer_17_k_activation_input9
+特殊程度分数: 22.438061
+
+统计信息:
+mean: -0.018076
+std: 1.425036
+min: -15.039675
+max: 14.134930
+range: 29.174604
+skewness: -0.262983
+kurtosis: 20.713569
+q1: -0.513640
+q3: 0.507577
+iqr: 1.021217
+zero_ratio: 0.000000
+extreme_ratio: 0.016027
+gini_like: 0.570483

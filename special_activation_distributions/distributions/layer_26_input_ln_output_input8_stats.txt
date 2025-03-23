@@ -1,0 +1,17 @@
+激活值: layer_26_input_ln_output_input8
+特殊程度分数: 31.195352
+
+统计信息:
+mean: 0.006195
+std: 0.485826
+min: -9.457120
+max: 9.500775
+range: 18.957895
+skewness: 0.456764
+kurtosis: 29.628997
+q1: -0.254061
+q3: 0.261675
+iqr: 0.515736
+zero_ratio: 0.000046
+extreme_ratio: 0.005524
+gini_like: 0.499525

@@ -1,0 +1,17 @@
+激活值: layer_21_v_activation_input9
+特殊程度分数: 2.657038
+
+统计信息:
+mean: 0.009244
+std: 0.511133
+min: -2.811619
+max: 3.998300
+range: 6.809919
+skewness: 0.095255
+kurtosis: 1.412199
+q1: -0.284760
+q3: 0.302463
+iqr: 0.587223
+zero_ratio: 0.000000
+extreme_ratio: 0.008301
+gini_like: 0.491784

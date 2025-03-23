@@ -1,0 +1,17 @@
+激活值: layer_7_mlp_output_input0
+特殊程度分数: 9.867007
+
+统计信息:
+mean: 0.000029
+std: 0.075300
+min: -1.866600
+max: 0.632265
+range: 2.498865
+skewness: -0.298090
+kurtosis: 8.479746
+q1: -0.042208
+q3: 0.042123
+iqr: 0.084332
+zero_ratio: 0.000019
+extreme_ratio: 0.006648
+gini_like: 0.478090

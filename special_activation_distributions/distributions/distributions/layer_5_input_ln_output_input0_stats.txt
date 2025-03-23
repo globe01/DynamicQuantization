@@ -1,0 +1,17 @@
+激活值: layer_5_input_ln_output_input0
+特殊程度分数: 94.299982
+
+统计信息:
+mean: 0.000462
+std: 0.278868
+min: -8.529309
+max: 7.415136
+range: 15.944445
+skewness: 0.878541
+kurtosis: 92.255891
+q1: -0.128484
+q3: 0.125789
+iqr: 0.254273
+zero_ratio: 0.000000
+extreme_ratio: 0.005765
+gini_like: 0.525120

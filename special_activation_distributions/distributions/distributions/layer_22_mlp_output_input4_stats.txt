@@ -1,0 +1,17 @@
+激活值: layer_22_mlp_output_input4
+特殊程度分数: 2.267590
+
+统计信息:
+mean: 0.002617
+std: 0.297725
+min: -1.948658
+max: 1.559691
+range: 3.508349
+skewness: -0.021546
+kurtosis: 1.100327
+q1: -0.163466
+q3: 0.170830
+iqr: 0.334295
+zero_ratio: 0.000000
+extreme_ratio: 0.007910
+gini_like: 0.493757

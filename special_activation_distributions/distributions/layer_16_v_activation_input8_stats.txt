@@ -1,0 +1,17 @@
+激活值: layer_16_v_activation_input8
+特殊程度分数: 2.719957
+
+统计信息:
+mean: -0.001123
+std: 0.396804
+min: -2.449974
+max: 2.437530
+range: 4.887504
+skewness: -0.024928
+kurtosis: 1.523038
+q1: -0.223625
+q3: 0.219656
+iqr: 0.443282
+zero_ratio: 0.000000
+extreme_ratio: 0.009171
+gini_like: 0.494290

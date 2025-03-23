@@ -1,0 +1,17 @@
+激活值: layer_30_input_ln_output_input7
+特殊程度分数: 6.382386
+
+统计信息:
+mean: -0.001669
+std: 0.474173
+min: -4.875841
+max: 5.568285
+range: 10.444126
+skewness: 0.187569
+kurtosis: 5.073914
+q1: -0.267993
+q3: 0.262186
+iqr: 0.530180
+zero_ratio: 0.000000
+extreme_ratio: 0.005991
+gini_like: 0.500543

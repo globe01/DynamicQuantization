@@ -1,0 +1,17 @@
+激活值: layer_21_self_attn_output_input0
+特殊程度分数: 16.507849
+
+统计信息:
+mean: 0.000224
+std: 0.132239
+min: -0.695003
+max: 2.593190
+range: 3.288193
+skewness: 0.857959
+kurtosis: 14.526819
+q1: -0.067198
+q3: 0.065348
+iqr: 0.132546
+zero_ratio: 0.000000
+extreme_ratio: 0.007136
+gini_like: 0.490171

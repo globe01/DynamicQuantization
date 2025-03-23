@@ -1,0 +1,17 @@
+激活值: layer_28_k_activation_input3
+特殊程度分数: 29.569104
+
+统计信息:
+mean: 0.028488
+std: 1.410661
+min: -14.137001
+max: 14.820298
+range: 28.957298
+skewness: 0.819092
+kurtosis: 27.418900
+q1: -0.540415
+q3: 0.556270
+iqr: 1.096685
+zero_ratio: 0.000000
+extreme_ratio: 0.011182
+gini_like: 0.553740

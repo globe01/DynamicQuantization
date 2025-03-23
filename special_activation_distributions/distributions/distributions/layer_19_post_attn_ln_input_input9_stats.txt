@@ -1,0 +1,17 @@
+激活值: layer_19_post_attn_ln_input_input9
+特殊程度分数: 33758.731007
+
+统计信息:
+mean: 0.015290
+std: 11.712024
+min: -1467.928467
+max: 2494.580811
+range: 3962.509277
+skewness: 115.504016
+kurtosis: 33642.183679
+q1: -0.464969
+q3: 0.457488
+iqr: 0.922457
+zero_ratio: 0.000000
+extreme_ratio: 0.000158
+gini_like: 0.520076

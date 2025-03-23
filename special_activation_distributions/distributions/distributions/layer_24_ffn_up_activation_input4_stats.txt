@@ -1,0 +1,17 @@
+激活值: layer_24_ffn_up_activation_input4
+特殊程度分数: 2.334611
+
+统计信息:
+mean: 0.004796
+std: 0.473942
+min: -3.862047
+max: 4.050004
+range: 7.912051
+skewness: 0.040983
+kurtosis: 1.226273
+q1: -0.270755
+q3: 0.281085
+iqr: 0.551840
+zero_ratio: 0.000000
+extreme_ratio: 0.006844
+gini_like: 0.465242

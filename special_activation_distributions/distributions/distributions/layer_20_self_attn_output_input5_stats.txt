@@ -1,0 +1,17 @@
+激活值: layer_20_self_attn_output_input5
+特殊程度分数: 33.152550
+
+统计信息:
+mean: 0.000227
+std: 0.119953
+min: -0.819463
+max: 4.315486
+range: 5.134950
+skewness: 0.880028
+kurtosis: 31.158037
+q1: -0.065493
+q3: 0.065927
+iqr: 0.131420
+zero_ratio: 0.000000
+extreme_ratio: 0.009103
+gini_like: 0.466213

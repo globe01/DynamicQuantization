@@ -1,0 +1,17 @@
+激活值: layer_6_mlp_output_input8
+特殊程度分数: 2.101054
+
+统计信息:
+mean: -0.000145
+std: 0.071551
+min: -0.636902
+max: 0.735015
+range: 1.371917
+skewness: -0.011238
+kurtosis: 1.033958
+q1: -0.041999
+q3: 0.042084
+iqr: 0.084083
+zero_ratio: 0.000031
+extreme_ratio: 0.006256
+gini_like: 0.465345

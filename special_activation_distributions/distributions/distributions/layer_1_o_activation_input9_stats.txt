@@ -1,0 +1,17 @@
+激活值: layer_1_o_activation_input9
+特殊程度分数: 1194.724576
+
+统计信息:
+mean: -0.000086
+std: 0.027815
+min: -2.039548
+max: 0.411695
+range: 2.451243
+skewness: -20.335870
+kurtosis: 1173.313827
+q1: -0.009493
+q3: 0.010077
+iqr: 0.019570
+zero_ratio: 0.000057
+extreme_ratio: 0.004983
+gini_like: 0.487563

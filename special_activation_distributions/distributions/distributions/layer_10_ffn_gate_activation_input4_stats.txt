@@ -1,0 +1,17 @@
+激活值: layer_10_ffn_gate_activation_input4
+特殊程度分数: 3.967347
+
+统计信息:
+mean: -0.157564
+std: 0.366367
+min: -3.421648
+max: 3.200266
+range: 6.621914
+skewness: -0.264465
+kurtosis: 2.255020
+q1: -0.369868
+q3: 0.056219
+iqr: 0.426087
+zero_ratio: 0.000006
+extreme_ratio: 0.026211
+gini_like: 0.461814

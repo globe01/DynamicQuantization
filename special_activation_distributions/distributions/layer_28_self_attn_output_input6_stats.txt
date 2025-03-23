@@ -1,0 +1,17 @@
+激活值: layer_28_self_attn_output_input6
+特殊程度分数: 235.362427
+
+统计信息:
+mean: 0.000703
+std: 0.177982
+min: -1.527640
+max: 6.829122
+range: 8.356762
+skewness: 7.040006
+kurtosis: 227.179110
+q1: -0.083887
+q3: 0.082783
+iqr: 0.166670
+zero_ratio: 0.000000
+extreme_ratio: 0.009208
+gini_like: 0.479580

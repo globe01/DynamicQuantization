@@ -1,0 +1,17 @@
+激活值: layer_20_v_activation_input1
+特殊程度分数: 2.751818
+
+统计信息:
+mean: -0.002901
+std: 0.453295
+min: -3.069728
+max: 2.563168
+range: 5.632895
+skewness: -0.083648
+kurtosis: 1.476099
+q1: -0.252260
+q3: 0.251841
+iqr: 0.504102
+zero_ratio: 0.000017
+extreme_ratio: 0.009120
+gini_like: 0.504818

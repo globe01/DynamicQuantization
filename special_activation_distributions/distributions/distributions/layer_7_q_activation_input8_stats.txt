@@ -1,0 +1,17 @@
+激活值: layer_7_q_activation_input8
+特殊程度分数: 18.593124
+
+统计信息:
+mean: -0.019940
+std: 1.266380
+min: -10.979816
+max: 11.389357
+range: 22.369173
+skewness: -0.170898
+kurtosis: 16.947106
+q1: -0.479476
+q3: 0.457350
+iqr: 0.936827
+zero_ratio: 0.000000
+extreme_ratio: 0.018951
+gini_like: 0.548045

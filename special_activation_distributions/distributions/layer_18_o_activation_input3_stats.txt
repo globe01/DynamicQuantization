@@ -1,0 +1,17 @@
+激活值: layer_18_o_activation_input3
+特殊程度分数: 3.937896
+
+统计信息:
+mean: -0.001578
+std: 0.136907
+min: -1.018857
+max: 2.240628
+range: 3.259485
+skewness: 0.081665
+kurtosis: 2.730651
+q1: -0.075931
+q3: 0.073042
+iqr: 0.148973
+zero_ratio: 0.000000
+extreme_ratio: 0.009163
+gini_like: 0.471156

@@ -1,0 +1,17 @@
+激活值: layer_8_o_activation_input1
+特殊程度分数: 84.070868
+
+统计信息:
+mean: -0.000021
+std: 0.047397
+min: -1.080098
+max: 1.947262
+range: 3.027359
+skewness: 1.940267
+kurtosis: 81.187000
+q1: -0.029034
+q3: 0.029251
+iqr: 0.058285
+zero_ratio: 0.000052
+extreme_ratio: 0.004220
+gini_like: 0.429560

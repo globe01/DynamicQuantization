@@ -1,0 +1,17 @@
+激活值: layer_14_self_attn_output_input8
+特殊程度分数: 65.754430
+
+统计信息:
+mean: -0.000465
+std: 0.074938
+min: -2.722183
+max: 2.549990
+range: 5.272173
+skewness: -0.537959
+kurtosis: 64.189839
+q1: -0.043513
+q3: 0.041990
+iqr: 0.085503
+zero_ratio: 0.000015
+extreme_ratio: 0.006256
+gini_like: 0.450744

@@ -1,0 +1,17 @@
+激活值: layer_21_post_attn_ln_output_input0
+特殊程度分数: 7.743868
+
+统计信息:
+mean: 0.000276
+std: 0.326411
+min: -5.729201
+max: 5.055783
+range: 10.784985
+skewness: -0.015711
+kurtosis: 6.602300
+q1: -0.183486
+q3: 0.183769
+iqr: 0.367255
+zero_ratio: 0.000000
+extreme_ratio: 0.005859
+gini_like: 0.504335

@@ -1,0 +1,17 @@
+激活值: layer_29_ffn_gate_activation_input1
+特殊程度分数: 14.165630
+
+统计信息:
+mean: -0.237442
+std: 0.642487
+min: -15.443160
+max: 6.774187
+range: 22.217346
+skewness: -0.731108
+kurtosis: 11.902533
+q1: -0.557846
+q3: 0.081090
+iqr: 0.638935
+zero_ratio: 0.000000
+extreme_ratio: 0.027091
+gini_like: 0.495088

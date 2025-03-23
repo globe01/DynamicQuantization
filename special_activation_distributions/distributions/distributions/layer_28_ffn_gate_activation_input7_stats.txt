@@ -1,0 +1,17 @@
+激活值: layer_28_ffn_gate_activation_input7
+特殊程度分数: 5.433556
+
+统计信息:
+mean: -0.227223
+std: 0.637931
+min: -5.368889
+max: 4.497444
+range: 9.866333
+skewness: -0.565226
+kurtosis: 3.356353
+q1: -0.560266
+q3: 0.102636
+iqr: 0.662902
+zero_ratio: 0.000000
+extreme_ratio: 0.026463
+gini_like: 0.491356

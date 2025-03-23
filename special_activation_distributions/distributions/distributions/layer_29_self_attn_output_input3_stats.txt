@@ -1,0 +1,17 @@
+激活值: layer_29_self_attn_output_input3
+特殊程度分数: 165.207658
+
+统计信息:
+mean: 0.000164
+std: 0.143485
+min: -0.716227
+max: 5.278031
+range: 5.994257
+skewness: 5.388582
+kurtosis: 158.777000
+q1: -0.073099
+q3: 0.072027
+iqr: 0.145126
+zero_ratio: 0.000000
+extreme_ratio: 0.005241
+gini_like: 0.468630

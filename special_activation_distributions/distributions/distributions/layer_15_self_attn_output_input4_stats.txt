@@ -1,0 +1,17 @@
+激活值: layer_15_self_attn_output_input4
+特殊程度分数: 6.091750
+
+统计信息:
+mean: -0.000281
+std: 0.095810
+min: -1.270374
+max: 2.027246
+range: 3.297620
+skewness: 0.048056
+kurtosis: 5.025781
+q1: -0.058121
+q3: 0.057625
+iqr: 0.115746
+zero_ratio: 0.000000
+extreme_ratio: 0.006608
+gini_like: 0.442876

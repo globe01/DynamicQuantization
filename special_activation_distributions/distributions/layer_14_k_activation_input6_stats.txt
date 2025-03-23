@@ -1,0 +1,17 @@
+激活值: layer_14_k_activation_input6
+特殊程度分数: 20.066884
+
+统计信息:
+mean: 0.005919
+std: 1.431485
+min: -12.617170
+max: 13.292060
+range: 25.909229
+skewness: 0.267679
+kurtosis: 18.297381
+q1: -0.498155
+q3: 0.486581
+iqr: 0.984735
+zero_ratio: 0.000000
+extreme_ratio: 0.016793
+gini_like: 0.582978

@@ -1,0 +1,17 @@
+激活值: layer_5_self_attn_output_input6
+特殊程度分数: 7.784852
+
+统计信息:
+mean: 0.000116
+std: 0.035556
+min: -0.308334
+max: 0.617358
+range: 0.925692
+skewness: 0.285188
+kurtosis: 6.445327
+q1: -0.021144
+q3: 0.021200
+iqr: 0.042345
+zero_ratio: 0.000017
+extreme_ratio: 0.008248
+gini_like: 0.444671

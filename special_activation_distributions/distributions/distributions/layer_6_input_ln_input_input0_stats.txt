@@ -1,0 +1,17 @@
+激活值: layer_6_input_ln_input_input0
+特殊程度分数: 25787.570730
+
+统计信息:
+mean: 0.017425
+std: 13.142730
+min: -1442.922119
+max: 2445.788574
+range: 3888.710693
+skewness: 100.676562
+kurtosis: 25685.347973
+q1: -0.096577
+q3: 0.095015
+iqr: 0.191591
+zero_ratio: 0.000000
+extreme_ratio: 0.000225
+gini_like: 0.770844

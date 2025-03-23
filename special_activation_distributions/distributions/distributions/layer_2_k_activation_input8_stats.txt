@@ -1,0 +1,17 @@
+激活值: layer_2_k_activation_input8
+特殊程度分数: 11.918629
+
+统计信息:
+mean: 0.030182
+std: 1.317055
+min: -11.607714
+max: 10.627270
+range: 22.234983
+skewness: 0.128168
+kurtosis: 10.318364
+q1: -0.542294
+q3: 0.585097
+iqr: 1.127391
+zero_ratio: 0.000015
+extreme_ratio: 0.019394
+gini_like: 0.542098

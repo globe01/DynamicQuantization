@@ -1,0 +1,17 @@
+激活值: layer_27_ffn_down_activation_input1
+特殊程度分数: 2.124109
+
+统计信息:
+mean: -0.002018
+std: 0.277633
+min: -2.735310
+max: 1.448251
+range: 4.183561
+skewness: -0.017305
+kurtosis: 1.048866
+q1: -0.162098
+q3: 0.157361
+iqr: 0.319459
+zero_ratio: 0.000000
+extreme_ratio: 0.005964
+gini_like: 0.469329

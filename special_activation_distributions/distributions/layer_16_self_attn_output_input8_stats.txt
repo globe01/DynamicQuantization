@@ -1,0 +1,17 @@
+激活值: layer_16_self_attn_output_input8
+特殊程度分数: 36.972637
+
+统计信息:
+mean: -0.000995
+std: 0.135691
+min: -4.256993
+max: 1.156870
+range: 5.413863
+skewness: -1.289543
+kurtosis: 34.573990
+q1: -0.072583
+q3: 0.071884
+iqr: 0.144467
+zero_ratio: 0.000000
+extreme_ratio: 0.008408
+gini_like: 0.470476

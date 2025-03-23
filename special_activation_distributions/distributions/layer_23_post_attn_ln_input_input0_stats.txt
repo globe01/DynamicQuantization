@@ -1,0 +1,17 @@
+激活值: layer_23_post_attn_ln_input_input0
+特殊程度分数: 25690.370815
+
+统计信息:
+mean: 0.025803
+std: 13.199802
+min: -1442.478271
+max: 2454.932861
+range: 3897.411133
+skewness: 100.940608
+kurtosis: 25588.389302
+q1: -0.574881
+q3: 0.577313
+iqr: 1.152194
+zero_ratio: 0.000000
+extreme_ratio: 0.000169
+gini_like: 0.518762

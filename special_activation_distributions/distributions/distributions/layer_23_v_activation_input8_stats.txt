@@ -1,0 +1,17 @@
+激活值: layer_23_v_activation_input8
+特殊程度分数: 2.538762
+
+统计信息:
+mean: 0.004292
+std: 0.559868
+min: -3.860399
+max: 4.635887
+range: 8.496285
+skewness: 0.040834
+kurtosis: 1.359226
+q1: -0.316073
+q3: 0.321167
+iqr: 0.637240
+zero_ratio: 0.000031
+extreme_ratio: 0.007233
+gini_like: 0.497002

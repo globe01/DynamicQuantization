@@ -1,0 +1,17 @@
+激活值: layer_14_post_attn_ln_input_input3
+特殊程度分数: 29789.204237
+
+统计信息:
+mean: 0.020561
+std: 12.312177
+min: -1451.988159
+max: 2462.385742
+range: 3914.374023
+skewness: 108.286990
+kurtosis: 29679.680006
+q1: -0.233365
+q3: 0.239412
+iqr: 0.472777
+zero_ratio: 0.000000
+extreme_ratio: 0.000179
+gini_like: 0.616830

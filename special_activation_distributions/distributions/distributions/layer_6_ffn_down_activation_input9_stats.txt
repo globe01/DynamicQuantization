@@ -1,0 +1,17 @@
+激活值: layer_6_ffn_down_activation_input9
+特殊程度分数: 2.335026
+
+统计信息:
+mean: -0.000362
+std: 0.080366
+min: -0.992340
+max: 0.559397
+range: 1.551737
+skewness: -0.026070
+kurtosis: 1.254782
+q1: -0.047637
+q3: 0.046926
+iqr: 0.094563
+zero_ratio: 0.000029
+extreme_ratio: 0.006032
+gini_like: 0.466749

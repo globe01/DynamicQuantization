@@ -1,0 +1,17 @@
+激活值: layer_26_o_activation_input6
+特殊程度分数: 207.676396
+
+统计信息:
+mean: -0.000580
+std: 0.156133
+min: -0.892545
+max: 7.532495
+range: 8.425040
+skewness: 5.163879
+kurtosis: 201.406040
+q1: -0.080403
+q3: 0.078743
+iqr: 0.159146
+zero_ratio: 0.000000
+extreme_ratio: 0.008004
+gini_like: 0.473196

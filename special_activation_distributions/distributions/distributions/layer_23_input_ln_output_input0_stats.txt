@@ -1,0 +1,17 @@
+激活值: layer_23_input_ln_output_input0
+特殊程度分数: 22.404709
+
+统计信息:
+mean: 0.002047
+std: 0.472772
+min: -9.187567
+max: 9.859268
+range: 19.046835
+skewness: 0.330878
+kurtosis: 20.942406
+q1: -0.250645
+q3: 0.250839
+iqr: 0.501484
+zero_ratio: 0.000000
+extreme_ratio: 0.005446
+gini_like: 0.511251

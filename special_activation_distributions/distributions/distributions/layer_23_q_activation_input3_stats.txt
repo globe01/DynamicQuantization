@@ -1,0 +1,17 @@
+激活值: layer_23_q_activation_input3
+特殊程度分数: 23.550975
+
+统计信息:
+mean: -0.006537
+std: 1.260152
+min: -11.803700
+max: 12.347832
+range: 24.151531
+skewness: -0.289450
+kurtosis: 21.941722
+q1: -0.496273
+q3: 0.498251
+iqr: 0.994524
+zero_ratio: 0.000000
+extreme_ratio: 0.012923
+gini_like: 0.530669

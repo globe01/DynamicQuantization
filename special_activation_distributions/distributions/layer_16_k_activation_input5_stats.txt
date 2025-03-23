@@ -1,0 +1,17 @@
+激活值: layer_16_k_activation_input5
+特殊程度分数: 22.778823
+
+统计信息:
+mean: -0.011376
+std: 1.493468
+min: -14.598881
+max: 15.061926
+range: 29.660807
+skewness: 0.230104
+kurtosis: 21.054993
+q1: -0.521213
+q3: 0.491617
+iqr: 1.012831
+zero_ratio: 0.000035
+extreme_ratio: 0.016218
+gini_like: 0.584658

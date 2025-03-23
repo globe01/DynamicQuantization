@@ -1,0 +1,17 @@
+激活值: layer_8_post_attn_ln_input_input5
+特殊程度分数: 27919.822890
+
+统计信息:
+mean: 0.019647
+std: 12.819147
+min: -1462.359741
+max: 2479.688721
+range: 3942.048340
+skewness: 104.834976
+kurtosis: 27813.565216
+q1: -0.137016
+q3: 0.139658
+iqr: 0.276674
+zero_ratio: 0.000035
+extreme_ratio: 0.000209
+gini_like: 0.709231
